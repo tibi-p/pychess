@@ -74,6 +74,7 @@ class Learn(GObject.GObject, Perspective):
 
             leaf = leaf0.dock(self.docks["PuzzlesPanel"][1], WEST, self.docks["PuzzlesPanel"][0], "PuzzlesPanel")
             leaf.dock(self.docks["LessonsPanel"][1], SOUTH, self.docks["LessonsPanel"][0], "LessonsPanel")
+            leaf.dock(self.docks["CustomPuzzlesPanel"][1], SOUTH, self.docks["CustomPuzzlesPanel"][0], "CustomPuzzlesPanel")
 
             leaf = leaf0.dock(self.docks["LecturesPanel"][1], SOUTH, self.docks["LecturesPanel"][0], "LecturesPanel")
             leaf.dock(self.docks["EndgamesPanel"][1], SOUTH, self.docks["EndgamesPanel"][0], "EndgamesPanel")
@@ -123,6 +124,7 @@ class Learn(GObject.GObject, Perspective):
 
         puzzles_solving_progress.connect("progress_updated", self.update_progress)
         lessons_solving_progress.connect("progress_updated", self.update_progress)
+        custom_puzzles_solving_progress.connect("progress_updated", self.update_progress)
 
         box.pack_start(self.tv, False, False, 6)
 
@@ -145,6 +147,8 @@ class Learn(GObject.GObject, Perspective):
                     lessons_solving_progress[filename] = [0] * len(progress)
                 for filename, progress in puzzles_solving_progress.items():
                     puzzles_solving_progress[filename] = [0] * len(progress)
+                for filename, progress in custom_puzzles_solving_progress.items():
+                    custom_puzzles_solving_progress[filename] = [0] * len(progress)
                 self.update_progress(None, None, None)
             dialog.destroy()
 
@@ -225,7 +229,7 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
         self.progress_file = addUserDataPrefix(progress_file)
 
     def get_count(self, filename):
-        subdir = "puzzles" if self.progress_file.endswith("puzzles.json") else "lessons"
+        subdir = "custom_puzzles" if self.progress_file.endswith("custom_puzzles.json") else "puzzles" if self.progress_file.endswith("puzzles.json") else "lessons"
         if filename.lower().endswith(".pgn"):
             chessfile = PGNFile(protoopen(addDataPrefix("learn/%s/%s" % (subdir, filename))))
             chessfile.limit = 1000
@@ -266,3 +270,4 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
 
 puzzles_solving_progress = SolvingProgress("puzzles.json")
 lessons_solving_progress = SolvingProgress("lessons.json")
+custom_puzzles_solving_progress = SolvingProgress("custom_puzzles.json")

@@ -165,6 +165,7 @@ DEFAULTS = {
         "learncombo1": 0,
         "learncombo2": 0,
         "learncombo3": 0,
+        "learncombo4": 0,
         "welcome_image": addDataPrefix("glade/background.jpg"),
         "alarm_spin": 15,
         "show_tip_at_startup": True,

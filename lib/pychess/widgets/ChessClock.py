@@ -194,6 +194,9 @@ class ChessClock(Gtk.DrawingArea):
     def update(self, wmovecount=-1, bmovecount=-1):
         if self.model.ended:
             return False
+        # Check for termination
+        if self.model.gamemodel is None:
+            return True
         if len(self.model.gamemodel.players) < 2:
             return not self.model.ended
         alarm_time = int(self.alarm_spin)

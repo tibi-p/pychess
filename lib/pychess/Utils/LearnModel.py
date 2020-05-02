@@ -3,7 +3,7 @@ import asyncio
 from gi.repository import GObject
 
 from pychess.Utils.const import BLACKWON, WHITEWON, DRAW, UNDOABLE_STATES,\
-    CANCELLED, PRACTICE_GOAL_REACHED, BLACK, WHITE, LECTURE, LESSON, PUZZLE, ENDGAME
+    CANCELLED, PRACTICE_GOAL_REACHED, BLACK, WHITE, LECTURE, LESSON, PUZZLE, ENDGAME, CUSTOM_PUZZLE
 from pychess.Utils.GameModel import GameModel
 
 learn2str = {
@@ -11,6 +11,7 @@ learn2str = {
     PUZZLE: "Puzzle",
     LESSON: "Lesson",
     ENDGAME: "Endgame",
+    CUSTOM_PUZZLE: "Custom Puzzle",
 }
 
 MATE, MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION = range(6)
@@ -87,6 +88,10 @@ class LearnModel(GameModel):
 
         elif learn_type == ENDGAME:
             self.end_game = True
+
+        elif learn_type == CUSTOM_PUZZLE:
+            self.puzzle_game = True
+            self.goal = Goal(self.tags["Termination"])
 
     def check_failed_playing_best(self, status):
         if self.ply - 1 in self.hints:

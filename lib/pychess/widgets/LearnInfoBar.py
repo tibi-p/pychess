@@ -2,10 +2,11 @@ from gi.repository import Gtk
 
 from pychess.Utils.const import UNDOABLE_STATES, PRACTICE_GOAL_REACHED
 from pychess.Utils.Cord import Cord
-from pychess.Utils.LearnModel import learn2str, LESSON, PUZZLE
+from pychess.Utils.LearnModel import learn2str, LESSON, PUZZLE, CUSTOM_PUZZLE
 from pychess.perspectives.learn.PuzzlesPanel import start_puzzle_from
 from pychess.perspectives.learn.EndgamesPanel import start_endgame_from
 from pychess.perspectives.learn.LessonsPanel import start_lesson_from
+from pychess.perspectives.learn.CustomPuzzlesPanel import start_custom_puzzle_from
 from pychess.widgets import preferencesDialog
 
 HINT, MOVE, RETRY, CONTINUE, BACK_TO_MAINLINE, NEXT = range(6)
@@ -193,6 +194,8 @@ class LearnInfoBar(Gtk.InfoBar):
             if self.gamemodel.puzzle_game:
                 if self.gamemodel.from_lesson:
                     start_lesson_from(self.gamemodel.source, self.gamemodel.current_index + 1)
+                elif self.gamemodel.learn_type == CUSTOM_PUZZLE:
+                    start_custom_puzzle_from(self.gamemodel.source, self.gamemodel.current_index + 1)
                 else:
                     start_puzzle_from(self.gamemodel.source, self.gamemodel.current_index + 1)
             elif self.gamemodel.end_game:

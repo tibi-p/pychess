@@ -13,7 +13,7 @@ from pychess.System import uistuff, conf
 from pychess.Utils.GameModel import GameModel
 from pychess.Utils.IconLoader import load_icon, get_pixbuf
 from pychess.Utils.TimeModel import TimeModel
-from pychess.Utils.const import LOCAL, ARTIFICIAL, WHITE, BLACK, NORMALCHESS, LECTURE, LESSON, PUZZLE, ENDGAME
+from pychess.Utils.const import LOCAL, ARTIFICIAL, WHITE, BLACK, NORMALCHESS, LECTURE, LESSON, PUZZLE, ENDGAME, CUSTOM_PUZZLE
 from pychess.Variants import variants
 from pychess.ic import ICLogon
 from pychess.widgets import newGameDialog
@@ -25,6 +25,7 @@ from pychess.perspectives.learn.LecturesPanel import LECTURES, start_lecture_fro
 from pychess.perspectives.learn.EndgamesPanel import ENDGAMES, start_endgame_from
 from pychess.perspectives.learn.LessonsPanel import LESSONS, start_lesson_from
 from pychess.perspectives.learn.PuzzlesPanel import PUZZLES, start_puzzle_from
+from pychess.perspectives.learn.CustomPuzzlesPanel import CUSTOM_PUZZLES, start_custom_puzzle_from
 
 
 class TaskerManager(Gtk.Table):
@@ -307,6 +308,7 @@ class LearnTasker(Gtk.Alignment):
             LESSON: (_("Lessons"), LESSONS),
             PUZZLE: (_("Puzzles"), PUZZLES),
             ENDGAME: (_("Endgames"), ENDGAMES),
+            CUSTOM_PUZZLE: (_("Custom Puzzles"), CUSTOM_PUZZLES),
         }
         for key, value in learn_mapping.items():
             categorystore.append([key, value[0]])
@@ -348,6 +350,9 @@ class LearnTasker(Gtk.Alignment):
                 elif self.category == ENDGAME:
                     for pieces, title in ENDGAMES:
                         self.learnstore.append([pieces, title])
+                elif self.category == CUSTOM_PUZZLE:
+                    for file_name, title, author in CUSTOM_PUZZLES:
+                        self.learnstore.append([file_name, title])
 
                 learn = conf.get("learncombo%s" % self.category)
                 self.learn_combo.set_active(learn)
@@ -392,6 +397,8 @@ class LearnTasker(Gtk.Alignment):
             start_lesson_from(source)
         elif self.category == PUZZLE:
             start_puzzle_from(source)
+        elif self.category == CUSTOM_PUZZLE:
+            start_custom_puzzle_from(source)
         elif self.category == ENDGAME:
             start_endgame_from(source)
 

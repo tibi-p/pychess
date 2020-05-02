@@ -238,4 +238,4 @@ COLUMN_ROW_RESET = "column_row_reset"
 GTK_ICON_VIEW_REFRESH = "view-refresh"
 
 # Learn categories
-LECTURE, LESSON, PUZZLE, ENDGAME = range(4)
+LECTURE, LESSON, PUZZLE, ENDGAME, CUSTOM_PUZZLE = range(5)

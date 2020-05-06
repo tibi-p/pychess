@@ -58,7 +58,12 @@ def start_custom_puzzle_from(filename, index=None):
     timemodel = TimeModel(0, 0)
     gamemodel = LearnModel(timemodel)
 
-    chessfile.loadToModel(rec, 0, gamemodel)
+    start_ply = 0
+    chessfile.loadToModel(rec, start_ply, gamemodel)
+    gamemodel.start_ply_num = start_ply
+    if gamemodel.timed:
+        gamemodel.timemodel = timemodel
+        gamemodel.timed = False
 
     start_custom_puzzle_game(gamemodel, filename, records, index, rec)
 

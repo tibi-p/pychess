@@ -14,7 +14,7 @@ learn2str = {
     CUSTOM_PUZZLE: "Custom Puzzle",
 }
 
-MATE, MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION = range(6)
+MATE, MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION, ONE_MOVE = range(7)
 
 
 class Goal():
@@ -33,6 +33,11 @@ class Goal():
         elif termination.startswith("equalize in"):
             self.result = EQUAL_IN
             self.moves = int(termination.split()[-1])
+            self.cp = None
+        elif termination.startswith("in n moves"):
+            self.result = ONE_MOVE
+            parts = termination.split()
+            self.moves = int(parts[-1][2:])
             self.cp = None
         elif "cp in" in termination:
             self.result = EVAL_IN
@@ -91,7 +96,8 @@ class LearnModel(GameModel):
 
         elif learn_type == CUSTOM_PUZZLE:
             self.puzzle_game = True
-            self.goal = Goal(self.tags["Termination"])
+            num_moves = 1
+            self.goal = Goal("in n moves n={}".format(num_moves))
 
     def check_failed_playing_best(self, status):
         if self.ply - 1 in self.hints:
@@ -108,7 +114,7 @@ class LearnModel(GameModel):
                 return False
             elif self.goal.result == DRAW_IN and status == DRAW:
                 return False
-            elif self.goal.result in (MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION):
+            elif self.goal.result in (MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION, ONE_MOVE):
                 expect_best = True
             else:
                 expect_best = False
@@ -125,13 +131,14 @@ class LearnModel(GameModel):
             self.emit("goal_checked")
             return
 
-        full_moves = (self.ply - self.lowply) // 2 + 1
+        full_moves = (self.ply - self.start_ply) // 2 + 1
         # print("Is Goal not reached?", self.goal.result, status, full_moves, self.goal.moves, self.failed_playing_best)
 
         if (self.goal.result == DRAW_IN and status == DRAW and full_moves <= self.goal.moves) or \
            (self.goal.result == MATE_IN and status == WHITEWON and full_moves <= self.goal.moves and self.starting_color == WHITE) or \
            (self.goal.result == MATE_IN and status == BLACKWON and full_moves <= self.goal.moves and self.starting_color == BLACK) or \
            (self.goal.result in (EVAL_IN, EQUAL_IN) and full_moves == self.goal.moves and not self.failed_playing_best) or \
+           (self.goal.result == ONE_MOVE and full_moves == self.goal.moves and not self.failed_playing_best) or \
            (self.goal.result == MATE and status in (WHITEWON, BLACKWON)) or \
            (self.goal.result == PROMOTION and self.moves[-1].promotion):
             if status in UNDOABLE_STATES:

@@ -122,6 +122,7 @@ class GameModel(GObject.GObject):
         self.scores = {}
         self.spy_scores = {}
         self.players = []
+        self.start_ply_num = 0
 
         self.gameno = None
         self.variations = [self.boards]
@@ -400,6 +401,11 @@ class GameModel(GObject.GObject):
         return self.boards[0].ply
 
     lowply = property(_get_lowest_ply)
+
+    def _get_start_ply(self):
+        return self.boards[self.start_ply_num].ply
+
+    start_ply = property(_get_start_ply)
 
     def _get_curplayer(self):
         try:

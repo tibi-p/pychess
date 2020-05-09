@@ -69,7 +69,7 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec, from_less
     engine = discoverer.getEngineByName(discoverer.getEngineLearn())
     ponder_off = True
 
-    color = gamemodel.boards[0].color
+    color = gamemodel.boards[gamemodel.start_ply_num].color
 
     w_name = "" if rec["White"] is None else rec["White"]
     b_name = "" if rec["Black"] is None else rec["Black"]
@@ -81,7 +81,7 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec, from_less
         w_name = player_name if color == WHITE else engine_name
         b_name = engine_name if color == WHITE else player_name
 
-    opp_name = engine_name if rec["Event"].startswith("Lichess Practice") else b_name
+    opp_name = b_name if color == WHITE else w_name
 
     if color == WHITE:
         p0 = (LOCAL, Human, (WHITE, w_name), w_name)

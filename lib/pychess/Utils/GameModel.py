@@ -702,6 +702,9 @@ class GameModel(GObject.GObject):
             if current_sum > choice:
                 return Move(move)
 
+    def is_puzzle_player_move(self):
+        return (len(self.moves) - self.start_ply_num) % 2 == 1
+
     # Run stuff
 
     def start(self):
@@ -845,7 +848,7 @@ class GameModel(GObject.GObject):
                         spectator.putMove(self.boards[-1], self.moves[-1],
                                           self.boards[-2])
 
-                if self.puzzle_game and len(self.moves) % 2 == 1:
+                if self.puzzle_game and self.is_puzzle_player_move():
                     status, reason = getStatus(self.boards[-1])
                     self.failed_playing_best = self.check_failed_playing_best(status)
                     if self.failed_playing_best:
@@ -881,7 +884,8 @@ class GameModel(GObject.GObject):
 
         status, reason = getStatus(self.boards[-1])
 
-        if self.practice_game and (len(self.moves) % 2 == 1 or status in UNDOABLE_STATES):
+        if self.practice_game and \
+           (self.is_puzzle_player_move() or status in UNDOABLE_STATES):
             self.check_goal(status, reason)
 
         if self.endstatus is not None:

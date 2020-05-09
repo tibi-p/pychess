@@ -211,7 +211,7 @@ class LearnInfoBar(Gtk.InfoBar):
 
     def on_game_changed(self, gamemodel, ply):
         if gamemodel.practice_game:
-            if len(gamemodel.moves) % 2 == 0:
+            if not gamemodel.is_puzzle_player_move():
                 # engine moved, we can enable retry
                 self.set_response_sensitive(RETRY, True)
                 return

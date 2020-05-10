@@ -3,6 +3,8 @@ from gi.repository import Gtk
 from pychess.Utils.const import UNDOABLE_STATES, PRACTICE_GOAL_REACHED
 from pychess.Utils.Cord import Cord
 from pychess.Utils.LearnModel import learn2str, LESSON, PUZZLE, CUSTOM_PUZZLE
+from pychess.perspectives.learn import lessons_solving_progress, \
+    puzzles_solving_progress, custom_puzzles_solving_progress
 from pychess.perspectives.learn.PuzzlesPanel import start_puzzle_from
 from pychess.perspectives.learn.EndgamesPanel import start_endgame_from
 from pychess.perspectives.learn.LessonsPanel import start_lesson_from
@@ -79,10 +81,24 @@ class LearnInfoBar(Gtk.InfoBar):
         self.add_button(_("Best move"), MOVE)
         self.show_all()
 
+    def get_progress(self):
+        if self.gamemodel.puzzle_game:
+            if self.gamemodel.from_lesson:
+                return lessons_solving_progress[self.gamemodel.source]
+            elif self.gamemodel.learn_type == CUSTOM_PUZZLE:
+                return custom_puzzles_solving_progress[self.gamemodel.source]
+            else:
+                return puzzles_solving_progress[self.gamemodel.source]
+        elif self.gamemodel.lesson_game:
+            return lessons_solving_progress[self.gamemodel.source]
+        else:
+            return None
+
     def get_next_puzzle(self):
         self.clear()
         self.set_message_type(Gtk.MessageType.INFO)
-        if self.gamemodel.learn_type in(LESSON, PUZZLE) and self.gamemodel.current_index + 1 == self.gamemodel.game_count:
+        progress = self.get_progress()
+        if self.gamemodel.learn_type in (LESSON, PUZZLE, CUSTOM_PUZZLE) and progress.all_solved():
             self.content_area.add(Gtk.Label(_("Well done! %s completed." % learn2str[self.gamemodel.learn_type])))
         else:
             if "FEN" in self.gamemodel.tags:
@@ -191,17 +207,18 @@ class LearnInfoBar(Gtk.InfoBar):
             self.boardcontrol.game_preview = False
 
         elif response == NEXT:
+            progress = self.get_progress()
             if self.gamemodel.puzzle_game:
                 if self.gamemodel.from_lesson:
-                    start_lesson_from(self.gamemodel.source, self.gamemodel.current_index + 1)
+                    start_lesson_from(self.gamemodel.source, progress.first_unsolved())
                 elif self.gamemodel.learn_type == CUSTOM_PUZZLE:
-                    start_custom_puzzle_from(self.gamemodel.source, self.gamemodel.current_index + 1)
+                    start_custom_puzzle_from(self.gamemodel.source, progress.random_unsolved())
                 else:
-                    start_puzzle_from(self.gamemodel.source, self.gamemodel.current_index + 1)
+                    start_puzzle_from(self.gamemodel.source, progress.first_unsolved())
             elif self.gamemodel.end_game:
                 start_endgame_from(self.gamemodel.source)
             elif self.gamemodel.lesson_game:
-                start_lesson_from(self.gamemodel.source, self.gamemodel.current_index + 1)
+                start_lesson_from(self.gamemodel.source, progress.first_unsolved())
             else:
                 print(self.gamemodel.__dir__())
 

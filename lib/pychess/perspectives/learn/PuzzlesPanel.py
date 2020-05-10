@@ -10,6 +10,7 @@ from pychess.Variants import variants
 from pychess.Players.Human import Human
 from pychess.Players.engineNest import discoverer
 from pychess.perspectives import perspective_manager
+from pychess.perspectives.learn import ProgressOne
 from pychess.perspectives.learn.generate.generateLessonsSidepanel import generateLessonsSidepanel
 from pychess.perspectives.learn import lessons_solving_progress
 from pychess.perspectives.learn import puzzles_solving_progress
@@ -59,11 +60,11 @@ def start_puzzle_from(filename, index=None):
 
     records, plys = chessfile.get_records()
 
-    progress = puzzles_solving_progress.get(filename, [0] * chessfile.count)
+    progress = puzzles_solving_progress.get(filename, ProgressOne.new(chessfile.count))
 
     if index is None:
         try:
-            index = progress.index(0)
+            index = progress.first_unsolved()
         except ValueError:
             index = 0
 
@@ -120,7 +121,7 @@ def start_puzzle_game(gamemodel, filename, records, index, rec, from_lesson=Fals
             else:
                 progress = puzzles_solving_progress[gamemodel.source]
 
-            progress[gamemodel.current_index] = 1
+            progress.set(gamemodel.current_index)
 
             if from_lesson:
                 lessons_solving_progress[gamemodel.source] = progress

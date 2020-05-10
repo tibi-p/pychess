@@ -1,5 +1,6 @@
 import os
-import json
+import jsonpickle
+import random
 from abc import ABCMeta
 from collections import UserDict
 
@@ -144,11 +145,11 @@ class Learn(GObject.GObject, Perspective):
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
                 for filename, progress in lessons_solving_progress.items():
-                    lessons_solving_progress[filename] = [0] * len(progress)
+                    lessons_solving_progress[filename] = ProgressOne.new(progress.total())
                 for filename, progress in puzzles_solving_progress.items():
-                    puzzles_solving_progress[filename] = [0] * len(progress)
+                    puzzles_solving_progress[filename] = ProgressOne.new(progress.total())
                 for filename, progress in custom_puzzles_solving_progress.items():
-                    custom_puzzles_solving_progress[filename] = [0] * len(progress)
+                    custom_puzzles_solving_progress[filename] = ProgressOne.new(progress.total())
                 self.update_progress(None, None, None)
             dialog.destroy()
 
@@ -179,21 +180,21 @@ class Learn(GObject.GObject, Perspective):
         stat = [0, 0, 0, 0, 0, 0, 0, 0]
         for filename, progress in solving_progress.items():
             if filename.startswith("lichess"):
-                stat[0] += len(progress)
-                stat[1] += progress.count(1)
+                stat[0] += progress.total()
+                stat[1] += progress.count_solved()
             elif filename.startswith("mate_in"):
-                stat[2] += len(progress)
-                stat[3] += progress.count(1)
+                stat[2] += progress.total()
+                stat[3] += progress.count_solved()
             elif filename.endswith(".olv"):
-                stat[4] += len(progress)
-                stat[5] += progress.count(1)
+                stat[4] += progress.total()
+                stat[5] += progress.count_solved()
 
         # Compute cumulative lessons solving statistics
         solving_progress = lessons_solving_progress.read_all()
 
         for filename, progress in solving_progress.items():
-            stat[6] += len(progress)
-            stat[7] += progress.count(1)
+            stat[6] += progress.total()
+            stat[7] += progress.count_solved()
 
         stats = []
         for i in range(4):
@@ -210,6 +211,34 @@ class GObjectMutableMapping(GObjectMeta, ABCMeta):
         TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
     """
     pass
+
+
+class ProgressOne:
+    def __init__(self, solved):
+        self.solved = solved
+
+    def first_unsolved(self):
+        return self.solved.index(0)
+
+    def random_unsolved(self):
+        unsolved = [idx for idx, x in enumerate(self.solved) if x == 0]
+        return random.choice(unsolved)
+
+    def count_solved(self):
+        return self.solved.count(1)
+
+    def all_solved(self):
+        return 0 not in self.solved
+
+    def total(self):
+        return len(self.solved)
+
+    def set(self, index):
+        self.solved[index] = 1
+
+    @staticmethod
+    def new(num_games):
+        return ProgressOne([0] * num_games)
 
 
 class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping):
@@ -243,26 +272,27 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
     def __getitem__(self, key):
         if os.path.isfile(self.progress_file):
             with open(self.progress_file, "r") as f:
-                self.data = json.load(f)
+                self.data = jsonpickle.decode(f.read())
             if key not in self.data:
-                self.__setitem__(key, [0] * self.get_count(key))
+                self.__setitem__(key, ProgressOne.new(self.get_count(key)))
         else:
-            self.__setitem__(key, [0] * self.get_count(key))
+            self.__setitem__(key, ProgressOne.new(self.get_count(key)))
 
-        # print("Solved: %s / %s %s" % (self[key].count(1), len(self[key]), key))
+        # print("Solved: %s / %s %s" % (self[key].count_solved(), self[key].total(), key))
 
         return self.data[key]
 
     def __setitem__(self, key, value):
         with open(self.progress_file, "w") as f:
             self.data[key] = value
-            json.dump(self.data, f)
+            encoded_data = jsonpickle.encode(self.data)
+            f.write(encoded_data)
         self.emit("progress_updated", key, value)
 
     def read_all(self):
         if os.path.isfile(self.progress_file):
             with open(self.progress_file, "r") as f:
-                self.data = json.load(f)
+                self.data = jsonpickle.decode(f.read())
                 return self.data
         else:
             return {}

@@ -3,6 +3,7 @@ import asyncio
 from gi.repository import Gtk
 
 from pychess.compat import create_task
+from pychess.perspectives.learn import ProgressOne
 from pychess.System import conf
 from pychess.Utils.const import COLUMN_ROW_RESET, GTK_ICON_VIEW_REFRESH
 from pychess.widgets import mainwindow
@@ -92,10 +93,10 @@ def generateLessonsSidepanel(solving_progress, learn_category_id, entries, start
 
         @staticmethod
         def _compute_progress_info(progress):
-            solved = progress.count(1)
-            percent = 0 if solved == 0 else round((solved * 100.) / len(progress))
+            solved = progress.count_solved()
+            percent = 0 if solved == 0 else round((solved * 100.) / progress.total())
             reset_icon = None if solved == 0 else GTK_ICON_VIEW_REFRESH
-            return "%s / %s" % (solved, len(progress)), percent, reset_icon
+            return "%s / %s" % (solved, progress.total()), percent, reset_icon
 
         def _reset_progress_file(self, filename, title):
             progress = solving_progress[filename]
@@ -109,7 +110,7 @@ def generateLessonsSidepanel(solving_progress, learn_category_id, entries, start
                 )
                 response = dialog.run()
                 if response == Gtk.ResponseType.OK:
-                    solving_progress[filename] = [0] * len(progress)
+                    solving_progress[filename] = ProgressOne.new(progress.total())
                     self.persp.update_progress(None, None, None)
                 dialog.destroy()
     return Sidepanel

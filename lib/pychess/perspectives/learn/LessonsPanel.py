@@ -8,6 +8,7 @@ from pychess.Utils.TimeModel import TimeModel
 from pychess.Players.Human import Human
 from pychess.System import conf
 from pychess.perspectives import perspective_manager
+from pychess.perspectives.learn import ProgressOne
 from pychess.perspectives.learn.generate.generateLessonsSidepanel import generateLessonsSidepanel
 from pychess.perspectives.learn import lessons_solving_progress
 from pychess.perspectives.learn.PuzzlesPanel import start_puzzle_game
@@ -40,11 +41,11 @@ def start_lesson_from(filename, index=None):
     chessfile.init_tag_database()
     records, plys = chessfile.get_records()
 
-    progress = lessons_solving_progress.get(filename, [0] * chessfile.count)
+    progress = lessons_solving_progress.get(filename, ProgressOne.new(chessfile.count))
 
     if index is None:
         try:
-            index = progress.index(0)
+            index = progress.first_unsolved()
         except ValueError:
             index = 0
 
@@ -84,7 +85,7 @@ def start_lesson_game(gamemodel, filename, chessfile, records, index, rec):
         gamemodel.scores = {}
         chessfile.loadToModel(rec, -1, gamemodel)
         progress = lessons_solving_progress[gamemodel.source]
-        progress[gamemodel.current_index] = 1
+        progress.set(gamemodel.current_index)
         lessons_solving_progress[gamemodel.source] = progress
         if "FEN" in gamemodel.tags:
             create_task(gamemodel.restart_analyzer(HINT))

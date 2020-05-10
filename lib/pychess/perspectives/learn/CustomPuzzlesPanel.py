@@ -10,6 +10,7 @@ from pychess.Variants import variants
 from pychess.Players.Human import Human
 from pychess.Players.engineNest import discoverer
 from pychess.perspectives import perspective_manager
+from pychess.perspectives.learn import ProgressOne
 from pychess.perspectives.learn.generate.generateLessonsSidepanel import generateLessonsSidepanel
 from pychess.perspectives.learn import lessons_solving_progress
 from pychess.perspectives.learn import custom_puzzles_solving_progress
@@ -45,12 +46,12 @@ def start_custom_puzzle_from(filename, index=None):
 
     records, plys = chessfile.get_records()
 
-    progress = custom_puzzles_solving_progress.get(filename, [0] * chessfile.count)
+    progress = custom_puzzles_solving_progress.get(filename, ProgressOne.new(chessfile.count))
 
     if index is None:
         try:
-            index = progress.index(0)
-        except ValueError:
+            index = progress.random_unsolved()
+        except IndexError:
             index = 0
 
     rec = records[index]
@@ -68,8 +69,8 @@ def start_custom_puzzle_from(filename, index=None):
     start_custom_puzzle_game(gamemodel, filename, records, index, rec)
 
 
-def start_custom_puzzle_game(gamemodel, filename, records, index, rec, from_lesson=False):
-    gamemodel.set_learn_data(CUSTOM_PUZZLE, filename, index, len(records), from_lesson=from_lesson)
+def start_custom_puzzle_game(gamemodel, filename, records, index, rec):
+    gamemodel.set_learn_data(CUSTOM_PUZZLE, filename, index, len(records))
 
     engine = discoverer.getEngineByName(discoverer.getEngineLearn())
     ponder_off = True
@@ -104,19 +105,11 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec, from_less
         gamemodel.emit("players_changed")
     gamemodel.connect("game_started", on_game_started, opp_name, color)
 
-    def goal_checked(gamemodle):
+    def goal_checked(gamemodel):
         if gamemodel.reason == PRACTICE_GOAL_REACHED:
-            if from_lesson:
-                progress = lessons_solving_progress[gamemodel.source]
-            else:
-                progress = custom_puzzles_solving_progress[gamemodel.source]
-
-            progress[gamemodel.current_index] = 1
-
-            if from_lesson:
-                lessons_solving_progress[gamemodel.source] = progress
-            else:
-                custom_puzzles_solving_progress[gamemodel.source] = progress
+            progress = custom_puzzles_solving_progress[gamemodel.source]
+            progress.set(gamemodel.current_index)
+            custom_puzzles_solving_progress[gamemodel.source] = progress
     gamemodel.connect("goal_checked", goal_checked)
 
     gamemodel.variant.need_initial_board = True

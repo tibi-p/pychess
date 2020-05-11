@@ -17,6 +17,7 @@ from pychess.System.prefix import addUserDataPrefix
 from pychess.Savers.olv import OLVFile
 from pychess.Savers.pgn import PGNFile
 from pychess.System.protoopen import protoopen
+from pychess.Utils.GameModel import GameModel
 
 
 class Learn(GObject.GObject, Perspective):
@@ -241,6 +242,33 @@ class ProgressOne:
         return ProgressOne([0] * num_games)
 
 
+class ProgressMulti:
+    def __init__(self, solved_by_move):
+        self.solved_by_move = solved_by_move
+
+    def random_unsolved(self):
+        unsolved = [
+            (idx, int(pos)) for idx, d in enumerate(self.solved_by_move)
+            for pos, x in d.items() if x == 0
+        ]
+        return random.choice(unsolved)
+
+    def count_solved(self):
+        return sum([list(d.values()).count(1) for d in self.solved_by_move])
+
+    def all_solved(self):
+        for d in self.solved_by_move:
+            if 0 in d.values():
+                return False
+        return True
+
+    def total(self):
+        return sum([len(d) for d in self.solved_by_move])
+
+    def set(self, index):
+        self.solved_by_move[index[0]][index[1]] = 1
+
+
 class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping):
     """ Book keeping of puzzle/lesson solving progress
         Each dict key is a .pgn/.olv file name
@@ -257,7 +285,7 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
         UserDict.__init__(self)
         self.progress_file = addUserDataPrefix(progress_file)
 
-    def get_count(self, filename):
+    def get_chessfile(self, filename):
         subdir = "custom_puzzles" if self.progress_file.endswith("custom_puzzles.json") else "puzzles" if self.progress_file.endswith("puzzles.json") else "lessons"
         if filename.lower().endswith(".pgn"):
             chessfile = PGNFile(protoopen(addDataPrefix("learn/%s/%s" % (subdir, filename))))
@@ -265,18 +293,40 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
             chessfile.init_tag_database()
         elif filename.lower().endswith(".olv"):
             chessfile = OLVFile(protoopen(addDataPrefix("learn/%s/%s" % (subdir, filename)), encoding="utf-8"))
+        return chessfile
+
+    def get_count(self, filename):
+        chessfile = self.get_chessfile(filename)
         chessfile.close()
         count = chessfile.count
         return count
+
+    def get_multi(self, filename):
+        chessfile = self.get_chessfile(filename)
+        records = chessfile.get_records()[0]
+        result = []
+        for rec in records:
+            gamemodel = GameModel()
+            chessfile.loadToModel(rec, -1, gamemodel)
+            num_moves = len(gamemodel.boards)
+            result.append({x: 0 for x in range(3, min(10, num_moves))})
+        chessfile.close()
+        return result
+
+    def get_default(self, filename):
+        if self.progress_file.endswith("custom_puzzles.json"):
+            return ProgressMulti(self.get_multi(filename))
+        else:
+            return ProgressOne.new(self.get_count(filename))
 
     def __getitem__(self, key):
         if os.path.isfile(self.progress_file):
             with open(self.progress_file, "r") as f:
                 self.data = jsonpickle.decode(f.read())
             if key not in self.data:
-                self.__setitem__(key, ProgressOne.new(self.get_count(key)))
+                self.__setitem__(key, self.get_default(key))
         else:
-            self.__setitem__(key, ProgressOne.new(self.get_count(key)))
+            self.__setitem__(key, self.get_default(key))
 
         # print("Solved: %s / %s %s" % (self[key].count_solved(), self[key].total(), key))
 

@@ -54,12 +54,12 @@ def start_custom_puzzle_from(filename, index=None):
         except IndexError:
             index = 0
 
-    rec = records[index]
+    rec = records[index[0]]
 
     timemodel = TimeModel(0, 0)
     gamemodel = LearnModel(timemodel)
 
-    start_ply = 0
+    start_ply = index[1]
     chessfile.loadToModel(rec, start_ply, gamemodel)
     gamemodel.start_ply_num = start_ply
     if gamemodel.timed:

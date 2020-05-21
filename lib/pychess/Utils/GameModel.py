@@ -121,6 +121,7 @@ class GameModel(GObject.GObject):
         self.moves = []
         self.scores = {}
         self.spy_scores = {}
+        self.full_eval = {}
         self.players = []
         self.start_ply_num = 0
 
@@ -389,6 +390,9 @@ class GameModel(GObject.GObject):
                 if 'Variation' in self.tags:
                     del self.tags['Variation']
         self.emit("opening_changed")
+
+    def parse_eval_hints(self):
+        pass
 
     # Board stuff
 

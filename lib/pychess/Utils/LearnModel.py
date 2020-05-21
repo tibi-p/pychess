@@ -99,10 +99,17 @@ class LearnModel(GameModel):
             num_moves = 1
             self.goal = Goal("in n moves n={}".format(num_moves))
 
+    def parse_eval_hints(self):
+        if not self.hints and self.full_eval:
+            for k, v in self.full_eval.items():
+                if k >= self.ply:
+                    self.hints[k] = self.full_eval[k][1]
+
     def check_failed_playing_best(self, status):
         if self.ply - 1 in self.hints:
-            best_score = self.hints[self.ply - 1][0][1]
-            best_moves = [hint[0] for hint in self.hints[self.ply - 1] if abs(hint[1] - best_score) <= 10]
+            ply_eval = self.hints[self.ply - 1]
+            best_score = ply_eval[0][1]
+            best_moves = [hint[0] for hint in ply_eval if abs(hint[1] - best_score) <= 10]
         else:
             best_moves = []
 

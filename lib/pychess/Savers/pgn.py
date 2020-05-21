@@ -68,6 +68,8 @@ pattern = re.compile(r"""
 
 move_eval_re = re.compile(r"\[%eval\s+([+\-])?(?:#)?(\d+)(?:[,\.](\d{1,2}))?(?:/(\d{1,2}))?\]")
 move_time_re = re.compile(r"\[%emt\s+(\d:)?(\d{1,2}:)?(\d{1,4})(?:\.(\d{1,3}))?\]")
+full_move_eval_re = re.compile(r"\[%full_eval (\([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\)) \(len,[0-9]+\) \(diff,[0-9]+\)(( \([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\))+)\]")
+single_move_eval_re = re.compile(r"\(([a-h][1-8][a-h][1-8]),((\+|-)?[0-9]+)\)")
 
 # Chessbase style circles/arrows {[%csl Ra3][%cal Gc2c3,Rc3d4]}
 comment_circles_re = re.compile(r"\[%csl\s+((?:[RGBY]\w{2},?)+)\]")
@@ -799,6 +801,7 @@ class PGNFile(ChessFile):
 
         self.has_emt = False
         self.has_eval = False
+        self.has_full_eval = False
 
         def walk(model, node, path):
             if node.prev is None:
@@ -828,6 +831,8 @@ class PGNFile(ChessFile):
                         self.has_emt = child.find("%emt") >= 0
                     if not self.has_eval:
                         self.has_eval = child.find("%eval") >= 0
+                    if not self.has_full_eval:
+                        self.has_full_eval = child.find("%full_eval") >= 0
 
         # Collect all variation paths into a list of board lists
         # where the first one will be the boards of mainline game.
@@ -836,7 +841,7 @@ class PGNFile(ChessFile):
         walk(model, boards[0], [])
         model.boards = model.variations[0]
         self.has_emt = self.has_emt and model.timed
-        if self.has_emt or self.has_eval:
+        if self.has_emt or self.has_eval or self.has_full_eval:
             if self.has_emt:
                 blacks = len(model.moves) // 2
                 whites = len(model.moves) - blacks
@@ -876,6 +881,19 @@ class PGNFile(ChessFile):
                                 if board.color == BLACK:
                                     value = -value
                                 model.scores[ply] = ("", value, depth)
+
+                        if self.has_full_eval:
+                            matches = full_move_eval_re.findall(child)
+                            for match in matches:
+                                def to_move(tok):
+                                    return (tok[0], int(tok[1]))
+                                idx = 0
+                                played_move = to_move(
+                                    single_move_eval_re.match(match[0]).groups()
+                                )
+                                moves = single_move_eval_re.findall(match[2])
+                                moves = [to_move(move) for move in moves]
+                                model.full_eval[ply] = (played_move, moves)
             log.debug("pgn.loadToModel: intervals %s" %
                       model.timemodel.intervals)
 

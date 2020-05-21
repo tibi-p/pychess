@@ -100,7 +100,8 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec):
 
     def on_game_started(gamemodel, name, color):
         perspective.activate_panel("annotationPanel")
-        create_task(gamemodel.start_analyzer(HINT, force_engine=discoverer.getEngineLearn()))
+        # create_task(gamemodel.start_analyzer(HINT, force_engine=discoverer.getEngineLearn()))
+        gamemodel.parse_eval_hints()
         gamemodel.players[1 - color].name = name
         gamemodel.emit("players_changed")
     gamemodel.connect("game_started", on_game_started, opp_name, color)

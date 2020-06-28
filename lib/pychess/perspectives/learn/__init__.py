@@ -301,15 +301,27 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
         count = chessfile.count
         return count
 
+    def gen_bad_move_filter(self, gamemodel, diff):
+        def has_low_score(x):
+            if x not in gamemodel.full_eval:
+                return False
+            res = gamemodel.full_eval[x]
+            actual_value = res[0][1]
+            max_value = res[1][0][1]
+            return actual_value < max_value - diff
+        return has_low_score
+
     def get_multi(self, filename):
         chessfile = self.get_chessfile(filename)
         records = chessfile.get_records()[0]
         result = []
         for rec in records:
+            filters = []
             gamemodel = GameModel()
             chessfile.loadToModel(rec, -1, gamemodel)
-            num_moves = len(gamemodel.boards)
-            result.append({x: 0 for x in range(3, min(10, num_moves))})
+            filters.append(self.gen_bad_move_filter(gamemodel, 50))
+            move_range = range(gamemodel.lowply, gamemodel.ply)
+            result.append({x: 0 for x in move_range if all([f(x) for f in filters])})
         chessfile.close()
         return result
 

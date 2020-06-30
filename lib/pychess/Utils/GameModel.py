@@ -122,6 +122,7 @@ class GameModel(GObject.GObject):
         self.scores = {}
         self.spy_scores = {}
         self.full_eval = {}
+        self.comment_tags = {}
         self.players = []
         self.start_ply_num = 0
 

@@ -70,6 +70,7 @@ move_eval_re = re.compile(r"\[%eval\s+([+\-])?(?:#)?(\d+)(?:[,\.](\d{1,2}))?(?:/
 move_time_re = re.compile(r"\[%emt\s+(\d:)?(\d{1,2}:)?(\d{1,4})(?:\.(\d{1,3}))?\]")
 full_move_eval_re = re.compile(r"\[%full_eval (\([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\)) \(len,[0-9]+\) \(diff,[0-9]+\)(( \([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\))+)\]")
 single_move_eval_re = re.compile(r"\(([a-h][1-8][a-h][1-8]),((\+|-)?[0-9]+)\)")
+comment_tags_re = re.compile(r"\[%tag (\w+)\]")
 
 # Chessbase style circles/arrows {[%csl Ra3][%cal Gc2c3,Rc3d4]}
 comment_circles_re = re.compile(r"\[%csl\s+((?:[RGBY]\w{2},?)+)\]")
@@ -802,6 +803,7 @@ class PGNFile(ChessFile):
         self.has_emt = False
         self.has_eval = False
         self.has_full_eval = False
+        self.has_comment_tag = False
 
         def walk(model, node, path):
             if node.prev is None:
@@ -833,6 +835,8 @@ class PGNFile(ChessFile):
                         self.has_eval = child.find("%eval") >= 0
                     if not self.has_full_eval:
                         self.has_full_eval = child.find("%full_eval") >= 0
+                    if not self.has_comment_tag:
+                        self.has_comment_tag = child.find("%tag") >= 0
 
         # Collect all variation paths into a list of board lists
         # where the first one will be the boards of mainline game.
@@ -894,6 +898,11 @@ class PGNFile(ChessFile):
                                 moves = single_move_eval_re.findall(match[2])
                                 moves = [to_move(move) for move in moves]
                                 model.full_eval[ply] = (played_move, moves)
+
+                        if self.has_comment_tag:
+                            matches = comment_tags_re.finditer(child)
+                            if matches:
+                                model.comment_tags[ply] = [m.groups()[0] for m in matches]
             log.debug("pgn.loadToModel: intervals %s" %
                       model.timemodel.intervals)
 

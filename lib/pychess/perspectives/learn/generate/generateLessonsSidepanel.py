@@ -110,7 +110,7 @@ def generateLessonsSidepanel(solving_progress, learn_category_id, entries, start
                 )
                 response = dialog.run()
                 if response == Gtk.ResponseType.OK:
-                    solving_progress[filename] = ProgressOne.new(progress.total())
+                    solving_progress[filename] = progress.dup_empty()
                     self.persp.update_progress(None, None, None)
                 dialog.destroy()
     return Sidepanel

@@ -77,6 +77,7 @@ class LearnModel(GameModel):
         self.hints = {}
         self.goal = None
         self.failed_playing_best = False
+        self.score_delta = None
 
         if learn_type == LECTURE:
             self.offline_lecture = True
@@ -106,10 +107,14 @@ class LearnModel(GameModel):
                     self.hints[k] = self.full_eval[k][1]
 
     def check_failed_playing_best(self, status):
+        player_move = self.moves[-1].as_uci()
         if self.ply - 1 in self.hints:
             ply_eval = self.hints[self.ply - 1]
             best_score = ply_eval[0][1]
             best_moves = [hint[0] for hint in ply_eval if abs(hint[1] - best_score) <= 10]
+            player_score = next(x[1] for x in ply_eval if x[0] == player_move)
+            if player_score is not None:
+                self.score_delta = best_score - player_score
         else:
             best_moves = []
 
@@ -122,13 +127,13 @@ class LearnModel(GameModel):
             elif self.goal.result == DRAW_IN and status == DRAW:
                 return False
             elif self.goal.result in (MATE_IN, DRAW_IN, EQUAL_IN, EVAL_IN, PROMOTION, ONE_MOVE):
-                expect_best = True
+                expect_best = self.goal.result != ONE_MOVE
             else:
                 expect_best = False
         else:
             expect_best = False
 
-        failed = expect_best and self.moves[-1].as_uci() not in best_moves
+        failed = expect_best and player_move not in best_moves
         return failed
 
     def check_goal(self, status, reason):

@@ -109,7 +109,9 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec):
     def goal_checked(gamemodel):
         if gamemodel.reason == PRACTICE_GOAL_REACHED:
             progress = custom_puzzles_solving_progress[gamemodel.source]
-            progress.set(gamemodel.current_index)
+            if gamemodel.score_delta is not None:
+                progress.set(gamemodel.current_index, gamemodel.score_delta)
+                gamemodel.score_delta = None
             custom_puzzles_solving_progress[gamemodel.source] = progress
     gamemodel.connect("goal_checked", goal_checked)
 

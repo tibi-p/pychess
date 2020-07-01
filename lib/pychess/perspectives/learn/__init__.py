@@ -146,11 +146,11 @@ class Learn(GObject.GObject, Perspective):
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
                 for filename, progress in lessons_solving_progress.items():
-                    lessons_solving_progress[filename] = ProgressOne.new(progress.total())
+                    lessons_solving_progress[filename] = progress.dup_empty()
                 for filename, progress in puzzles_solving_progress.items():
-                    puzzles_solving_progress[filename] = ProgressOne.new(progress.total())
+                    puzzles_solving_progress[filename] = progress.dup_empty()
                 for filename, progress in custom_puzzles_solving_progress.items():
-                    custom_puzzles_solving_progress[filename] = ProgressOne.new(progress.total())
+                    custom_puzzles_solving_progress[filename] = progress.dup_empty()
                 self.update_progress(None, None, None)
             dialog.destroy()
 
@@ -234,13 +234,19 @@ class ProgressOne:
     def total(self):
         return len(self.solved)
 
-    def set(self, index):
+    def dup_empty(self):
+        return ProgressOne.new(self.total())
+
+    def set(self, index, value=None):
         self.solved[index] = 1
 
     @staticmethod
     def new(num_games):
         return ProgressOne([0] * num_games)
 
+
+def is_done(v):
+    return 0 in v
 
 class ProgressMulti:
     def __init__(self, solved_by_move):
@@ -249,24 +255,31 @@ class ProgressMulti:
     def random_unsolved(self):
         unsolved = [
             (idx, int(pos)) for idx, d in enumerate(self.solved_by_move)
-            for pos, x in d.items() if x == 0
+            for pos, x in d.items() if not is_done(x)
         ]
         return random.choice(unsolved)
 
     def count_solved(self):
-        return sum([list(d.values()).count(1) for d in self.solved_by_move])
+        return sum([len([x for x in d.values() if is_done(x)]) for d in self.solved_by_move])
 
     def all_solved(self):
         for d in self.solved_by_move:
-            if 0 in d.values():
-                return False
+            for v in d.values():
+                if not is_done(v):
+                    return False
         return True
 
     def total(self):
         return sum([len(d) for d in self.solved_by_move])
 
-    def set(self, index):
-        self.solved_by_move[index[0]][index[1]] = 1
+    def dup_empty(self):
+        return ProgressMulti([{x: [] for x in d} for d in self.solved_by_move])
+
+    def set(self, index, value=None):
+        move_no = index[1]
+        if not isinstance(move_no, str):
+            move_no = str(move_no)
+        self.solved_by_move[index[0]][move_no].append(value)
 
 
 class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping):
@@ -321,7 +334,7 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
             chessfile.loadToModel(rec, -1, gamemodel)
             filters.append(self.gen_bad_move_filter(gamemodel, 50))
             move_range = range(gamemodel.lowply, gamemodel.ply)
-            result.append({x: 0 for x in move_range if all([f(x) for f in filters])})
+            result.append({str(x): [] for x in move_range if all([f(x) for f in filters])})
         chessfile.close()
         return result
 

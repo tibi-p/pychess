@@ -34,7 +34,7 @@ from .const import WAITING_TO_START, UNKNOWN_REASON, WHITE, ARTIFICIAL, RUNNING,
     ADJOURNED_AGREEMENT, PAUSE_OFFER, RESUME_OFFER, ACTION_ERROR_NONE_TO_ACCEPT, \
     ABORTED_AGREEMENT, WHITE_ENGINE_DIED, BLACK_ENGINE_DIED, WON_ADJUDICATION, \
     UNDOABLE_STATES, DRAW_REPETITION, UNDOABLE_REASONS, UNFINISHED_STATES, \
-    DRAW_50MOVES, HINT
+    DRAW_50MOVES, HINT, CUSTOM_PUZZLE
 
 
 class GameModel(GObject.GObject):
@@ -278,6 +278,9 @@ class GameModel(GObject.GObject):
     def start_analyzer(self, analyzer_type, force_engine=None):
         # Don't start regular analyzers
         if (self.practice_game or self.lesson_game) and force_engine is None and not self.solved:
+            return
+
+        if self.puzzle_game and self.learn_type == CUSTOM_PUZZLE:
             return
 
         # prevent starting new analyzers again and again

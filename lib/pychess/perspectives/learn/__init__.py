@@ -254,10 +254,11 @@ class ProgressMulti:
 
     def random_unsolved(self):
         unsolved = [
-            (idx, int(pos)) for idx, d in enumerate(self.solved_by_move)
+            (len(x), (idx, int(pos))) for idx, d in enumerate(self.solved_by_move)
             for pos, x in d.items() if not is_done(x)
         ]
-        return random.choice(unsolved)
+        min_len = min(unsolved)[0]
+        return random.choice([x[1] for x in unsolved if x[0] == min_len])
 
     def count_solved(self):
         return sum([len([x for x in d.values() if is_done(x)]) for d in self.solved_by_move])

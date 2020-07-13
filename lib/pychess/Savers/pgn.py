@@ -68,8 +68,8 @@ pattern = re.compile(r"""
 
 move_eval_re = re.compile(r"\[%eval\s+([+\-])?(?:#)?(\d+)(?:[,\.](\d{1,2}))?(?:/(\d{1,2}))?\]")
 move_time_re = re.compile(r"\[%emt\s+(\d:)?(\d{1,2}:)?(\d{1,4})(?:\.(\d{1,3}))?\]")
-full_move_eval_re = re.compile(r"\[%full_eval (\([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\)) \(len,[0-9]+\) \(diff,[0-9]+\)(( \([a-h][1-8][a-h][1-8],(\+|-)?[0-9]+\))+)\]")
-single_move_eval_re = re.compile(r"\(([a-h][1-8][a-h][1-8]),((\+|-)?[0-9]+)\)")
+full_move_eval_re = re.compile(r"\[%full_eval (\([a-h][1-8][a-h][1-8],#?(\+|-)?[0-9]+\)) \(len,[0-9]+\) \(diff,[0-9]+\)(( \([a-h][1-8][a-h][1-8],#?(\+|-)?[0-9]+\))+)\]")
+single_move_eval_re = re.compile(r"\(([a-h][1-8][a-h][1-8]),(#?(\+|-)?[0-9]+)\)")
 comment_tags_re = re.compile(r"\[%tag (\w+)\]")
 
 # Chessbase style circles/arrows {[%csl Ra3][%cal Gc2c3,Rc3d4]}
@@ -889,8 +889,17 @@ class PGNFile(ChessFile):
                         if self.has_full_eval:
                             matches = full_move_eval_re.findall(child)
                             for match in matches:
+                                def to_score(s):
+                                    if s.startswith('#'):
+                                        mate = int(s[1:])
+                                        if mate > 0:
+                                            return 10000 - mate
+                                        else:
+                                            return -10000 - mate
+                                    else:
+                                        return int(s)
                                 def to_move(tok):
-                                    return (tok[0], int(tok[1]))
+                                    return (tok[0], to_score(tok[1]))
                                 idx = 0
                                 played_move = to_move(
                                     single_move_eval_re.match(match[0]).groups()

@@ -103,8 +103,9 @@ class LearnModel(GameModel):
     def parse_eval_hints(self):
         if not self.hints and self.full_eval:
             for k, v in self.full_eval.items():
-                if k >= self.ply:
-                    self.hints[k] = self.full_eval[k][1]
+                real_ply = self.lowply + k
+                if real_ply >= self.ply:
+                    self.hints[real_ply] = self.full_eval[k][1]
 
     def check_failed_playing_best(self, status):
         player_move = self.moves[-1].as_uci()

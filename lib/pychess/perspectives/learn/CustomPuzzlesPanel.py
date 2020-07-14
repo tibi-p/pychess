@@ -75,7 +75,7 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec):
     engine = discoverer.getEngineByName(discoverer.getEngineLearn())
     ponder_off = True
 
-    color = gamemodel.boards[gamemodel.start_ply_num].color
+    color = gamemodel.getBoardAtPly(gamemodel.start_ply_num).color
 
     w_name = "" if rec["White"] is None else rec["White"]
     b_name = "" if rec["Black"] is None else rec["Black"]

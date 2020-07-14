@@ -317,9 +317,10 @@ class SolvingProgress(GObject.GObject, UserDict, metaclass=GObjectMutableMapping
 
     def gen_bad_move_filter(self, gamemodel, diff):
         def has_low_score(x):
-            if x not in gamemodel.full_eval:
+            rel_x = x - gamemodel.lowply
+            if rel_x not in gamemodel.full_eval:
                 return False
-            res = gamemodel.full_eval[x]
+            res = gamemodel.full_eval[rel_x]
             actual_value = res[0][1]
             max_value = res[1][0][1]
             return actual_value < max_value - diff

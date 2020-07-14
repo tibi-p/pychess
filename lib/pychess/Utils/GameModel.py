@@ -124,7 +124,7 @@ class GameModel(GObject.GObject):
         self.full_eval = {}
         self.comment_tags = {}
         self.players = []
-        self.start_ply_num = 0
+        self.start_ply_num = None
 
         self.gameno = None
         self.variations = [self.boards]
@@ -411,7 +411,10 @@ class GameModel(GObject.GObject):
     lowply = property(_get_lowest_ply)
 
     def _get_start_ply(self):
-        return self.boards[self.start_ply_num].ply
+        if self.start_ply_num is not None:
+            return self.start_ply_num
+        else:
+            return self.lowply
 
     start_ply = property(_get_start_ply)
 
@@ -717,7 +720,7 @@ class GameModel(GObject.GObject):
                 return Move(move)
 
     def is_puzzle_player_move(self):
-        return (len(self.moves) - self.start_ply_num) % 2 == 1
+        return (self.ply - self.start_ply) % 2 == 1
 
     # Run stuff
 

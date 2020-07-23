@@ -237,6 +237,9 @@ class ProgressOne:
     def dup_empty(self):
         return ProgressOne.new(self.total())
 
+    def get(self, index):
+        return self.solved[index]
+
     def set(self, index, value=None):
         self.solved[index] = 1
 
@@ -275,6 +278,12 @@ class ProgressMulti:
 
     def dup_empty(self):
         return ProgressMulti([{x: [] for x in d} for d in self.solved_by_move])
+
+    def get(self, index):
+        move_no = index[1]
+        if not isinstance(move_no, str):
+            move_no = str(move_no)
+        return self.solved_by_move[index[0]][move_no]
 
     def set(self, index, value=None):
         move_no = index[1]

@@ -104,15 +104,21 @@ def start_custom_puzzle_game(gamemodel, filename, records, index, rec):
         gamemodel.parse_eval_hints()
         gamemodel.players[1 - color].name = name
         gamemodel.emit("players_changed")
+        gamemodel.emit("puzzle_started")
     gamemodel.connect("game_started", on_game_started, opp_name, color)
 
     def goal_checked(gamemodel):
         if gamemodel.reason == PRACTICE_GOAL_REACHED:
             progress = custom_puzzles_solving_progress[gamemodel.source]
-            if gamemodel.score_delta is not None:
-                progress.set(gamemodel.current_index, gamemodel.score_delta)
+            current_progress = None
+            score_delta = gamemodel.score_delta
+            if score_delta is not None:
+                score_diff = score_delta[0] - score_delta[1]
+                progress.set(gamemodel.current_index, score_diff)
+                current_progress = progress.get(gamemodel.current_index)
                 gamemodel.score_delta = None
             custom_puzzles_solving_progress[gamemodel.source] = progress
+            gamemodel.emit("puzzle_finished", progress, current_progress, score_delta)
     gamemodel.connect("goal_checked", goal_checked)
 
     gamemodel.variant.need_initial_board = True

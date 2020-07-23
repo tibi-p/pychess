@@ -4,6 +4,7 @@ import os
 from gi.repository import Gdk, Gtk, GObject, Pango, PangoCairo
 
 from pychess.compat import create_task
+from pychess.perspectives.learn import custom_puzzles_solving_progress
 from pychess.System import conf, uistuff
 from pychess.Utils import prettyPrintScore
 from pychess.Utils.const import HINT, OPENING, SPY, BLACK, NULL_MOVE, ENDGAME, DRAW, WHITEWON, WHITE, NORMALCHESS
@@ -438,6 +439,43 @@ class EndgameAdvisor(Advisor):
             self.boardcontrol.play_or_add_move(board, move)
 
 
+class PuzzleAdvisor(Advisor):
+    # An EngineAdvisor always has self.linesExpected rows reserved for analysis.
+    def __init__(self, store, mode, tv, boardcontrol):
+        Advisor.__init__(self, store, _("Puzzle Stats"), OPENING)
+        self.tv = tv
+        self.boardcontrol = boardcontrol
+        self.boardview = boardcontrol.view
+        self.tooltip = _(
+            "The puzzle advisor will show stats about the puzzles attempted so far.")
+        self.boardview.model.connect("puzzle_finished", self.on_puzzle_finished),
+
+    def add_text_row(self, txt):
+        parent = self.store.get_iter(self.path)
+        self.store.append(parent, self.textOnlyRow(txt))
+
+    def on_puzzle_finished(self, gamemodel, progress, current_progress, score_delta):
+        if gamemodel is None or current_progress is None:
+            return
+
+        best_scores = []
+        last_scores = []
+        for solved_by_game in progress.solved_by_move:
+            for puzzle_progress in solved_by_game.values():
+                if puzzle_progress and puzzle_progress[-1] > 0:
+                    best_scores.append(min(puzzle_progress))
+                    last_scores.append(puzzle_progress[-1])
+
+        self.add_text_row('Tries: {}'.format(len(current_progress)))
+        self.add_text_row('Progress: {}'.format(current_progress))
+        self.add_text_row('Best Score: {}'.format(score_delta[0]))
+        self.add_text_row('Player Score: {}'.format(score_delta[1]))
+        self.add_text_row('Best Scores: {}'.format(best_scores))
+        self.add_text_row('Last Scores: {}'.format(last_scores))
+        tp = Gtk.TreePath(self.path)
+        self.tv.expand_row(tp, False)
+
+
 class Sidepanel:
     def load(self, gmwidg):
         self.gmwidg = gmwidg
@@ -559,6 +597,7 @@ class Sidepanel:
         self.model_cids = [
             gmwidg.gamemodel.connect("analyzer_added", self.on_analyzer_added),
             gmwidg.gamemodel.connect("analyzer_removed", self.on_analyzer_removed),
+            gmwidg.gamemodel.connect("puzzle_started", self.on_puzzle_started),
             gmwidg.gamemodel.connect_after("game_terminated", self.on_game_terminated),
         ]
 
@@ -637,6 +676,10 @@ class Sidepanel:
                 parent = advisor.empty_parent()
                 self.store.remove(parent)
                 self.advisors.remove(advisor)
+
+    def on_puzzle_started(self, gamemodel):
+        self.advisors.append(PuzzleAdvisor(self.store, HINT,
+                                           self.tv, self.boardcontrol))
 
     def shownChanged(self, boardview, shown):
         if boardview.model is None:

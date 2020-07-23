@@ -115,7 +115,7 @@ class LearnModel(GameModel):
             best_moves = [hint[0] for hint in ply_eval if abs(hint[1] - best_score) <= 10]
             player_score = next(x[1] for x in ply_eval if x[0] == player_move)
             if player_score is not None:
-                self.score_delta = best_score - player_score
+                self.score_delta = (best_score, player_score)
         else:
             best_moves = []
 

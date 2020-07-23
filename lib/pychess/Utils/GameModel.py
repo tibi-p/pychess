@@ -94,6 +94,10 @@ class GameModel(GObject.GObject):
                             (object, str)),
         "analyzer_resumed": (GObject.SignalFlags.RUN_FIRST, None,
                              (object, str)),
+        # puzzle_started is emitted upon starting a puzzle.
+        "puzzle_started": (GObject.SignalFlags.RUN_FIRST, None, ()),
+        # puzzle_finished is emitted upon finishing an attempt at a puzzle.
+        "puzzle_finished": (GObject.SignalFlags.RUN_FIRST, None, (object, object, object)),
         # opening_changed is emitted if the move changed the opening.
         "opening_changed": (GObject.SignalFlags.RUN_FIRST, None, ()),
         # variation_added is emitted if a variation was added.
